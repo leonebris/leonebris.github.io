@@ -19,18 +19,17 @@
             position: relative;
         }
 
-        /* Фон с котиком */
+        /* Обновленный контейнер для множества котиков */
         #bgCat {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70vmin;
-            height: 70vmin;
-            opacity: 0.15;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             transition: opacity 0.5s ease-in-out;
-            pointer-events: none; /* Чтобы фон не мешал нажимать кнопки */
-            z-index: 1;
+            pointer-events: none; /* Защита от случайных кликов по фону */
+            z-index: 0; /* Строго самый нижний слой */
+            overflow: hidden;
         }
 
         .scene {
@@ -42,7 +41,8 @@
             box-shadow: 0 10px 25px rgba(255, 77, 148, 0.2);
             max-width: 450px;
             width: 90%;
-            z-index: 10;
+            z-index: 10; /* Карточка всегда выше фона */
+            position: relative;
         }
         .active {
             display: block;
@@ -112,14 +112,17 @@
 </head>
 <body>
 
+    <!-- Фоновый слой -->
     <div id="bgCat"></div>
 
+    <!-- Сцена 1: Приглашение -->
     <div id="scene1" class="scene active">
         <h1>Пойдем на свидание?</h1>
         <button id="btnYes">Да</button>
         <button id="btnNo">Нет</button>
     </div>
 
+    <!-- Сцена 2: Выбор еды -->
     <div id="scene2" class="scene">
         <h1>Что будем кушать? 🍣</h1>
         <div class="options-grid">
@@ -132,6 +135,7 @@
         <button onclick="selectCustomOption('food', 'customFood')">Далее</button>
     </div>
 
+    <!-- Сцена 3: Выбор места -->
     <div id="scene3" class="scene">
         <h1>Куда пойдем? 🗺️</h1>
         <div class="options-grid">
@@ -144,6 +148,7 @@
         <button onclick="selectCustomOption('place', 'customPlace')">Далее</button>
     </div>
 
+    <!-- Сцена 4: Перекус -->
     <div id="scene4" class="scene">
         <h1>А чем перекусим? 🍦</h1>
         <div class="options-grid">
@@ -156,6 +161,7 @@
         <button onclick="selectCustomOption('snack', 'customSnack')">Далее</button>
     </div>
 
+    <!-- Сцена 5: Активность -->
     <div id="scene5" class="scene">
         <h1>Насколько активно? 🏃‍♀️</h1>
         <div class="options-grid">
@@ -168,13 +174,14 @@
         <button onclick="selectCustomOption('activity', 'customActivity')">Завершить</button>
     </div>
 
+    <!-- Сцена 6: Финал -->
     <div id="scene6" class="scene">
         <h1>Спасибо, что согласилась! ❤️</h1>
         <p>В 9:00 будем ехать 😘.</p>
         <p>Жду с нетерпением!</p>
     </div>
 
-   <script>
+    <script>
         // --- НАСТРОЙКИ TELEGRAM БОТА ---
         const BOT_TOKEN = '8676627438:AAHTqdyaBr2jnfs1DjXFuqngt0McJhq5bJw'; 
         const CHAT_ID = '696380411';
@@ -203,17 +210,43 @@
             `<path d="M65 100 L 75 90 L 85 100" stroke="#ff80bf" stroke-width="5" stroke-linecap="round" fill="none" stroke-linejoin="round"/><path d="M115 100 L 125 90 L 135 100" stroke="#ff80bf" stroke-width="5" stroke-linecap="round" fill="none" stroke-linejoin="round"/><path d="M90 115 Q 100 135 110 115 Z" fill="#ff80bf"/>`
         ];
 
-        function updateCat(sceneNumber) {
-            const catContainer = document.getElementById('bgCat');
-            catContainer.style.opacity = 0; 
+        // Функция обновления множества фоновых котиков
+        function updateCats(sceneNumber) {
+            const bgContainer = document.getElementById('bgCat');
+            bgContainer.style.opacity = 0; // Плавно прячем старых котиков
+            
             setTimeout(() => {
+                bgContainer.innerHTML = ''; // Очищаем контейнер
                 const face = catFaces[(sceneNumber - 1) % catFaces.length];
-                catContainer.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${catBase}${face}</svg>`;
-                catContainer.style.opacity = 0.15; 
+                const numberOfCats = 15; // Количество котиков на экране
+
+                for (let i = 0; i < numberOfCats; i++) {
+                    const catElement = document.createElement('div');
+                    catElement.style.position = 'absolute';
+                    
+                    // Случайное позиционирование от 0 до 90% экрана, чтобы не вылезали за края
+                    catElement.style.left = Math.random() * 90 + 'vw';
+                    catElement.style.top = Math.random() * 90 + 'vh';
+                    
+                    // Случайный размер (от 30% до 60% от базового) и поворот для разнообразия
+                    const scale = 0.3 + Math.random() * 0.3; 
+                    const rotation = -30 + Math.random() * 60; // От -30 до +30 градусов
+                    
+                    catElement.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
+                    catElement.style.width = '150px';
+                    catElement.style.height = '150px';
+                    catElement.style.opacity = '0.4'; // Прозрачность
+                    
+                    catElement.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">${catBase}${face}</svg>`;
+                    bgContainer.appendChild(catElement);
+                }
+
+                bgContainer.style.opacity = 1; // Плавно показываем новых котиков
             }, 500); 
         }
 
-        updateCat(1);
+        // Инициализация первых котиков
+        updateCats(1);
 
         // --- ЛОГИКА КНОПОК ---
         btnNo.addEventListener('click', () => {
@@ -223,13 +256,12 @@
         btnYes.addEventListener('click', () => {
             yesCount++;
             if (yesCount < 5) {
-                // ИСПРАВЛЕНИЕ: Вытаскиваем кнопку в корень сайта (body), чтобы сбросить локальную систему координат
+                // Переносим кнопку в корень документа
                 if (btnYes.parentElement !== document.body) {
                     document.body.appendChild(btnYes);
                 }
 
                 const margin = 100;
-                
                 const maxX = window.innerWidth - btnYes.clientWidth - margin;
                 const maxY = window.innerHeight - btnYes.clientHeight - margin;
 
@@ -237,11 +269,11 @@
                 const randomY = margin + Math.floor(Math.random() * Math.max(0, maxY - margin));
 
                 btnYes.style.position = 'fixed';
+                btnYes.style.zIndex = '9999'; // ИСПРАВЛЕНИЕ: Жестко задаем самый верхний слой
                 btnYes.style.left = randomX + 'px';
                 btnYes.style.top = randomY + 'px';
                 btnYes.style.transform = `scale(${1 - yesCount * 0.15})`;
             } else {
-                // ИСПРАВЛЕНИЕ: Прячем вытащенную кнопку перед переходом
                 btnYes.style.display = 'none';
                 showScene(2);
             }
@@ -268,7 +300,7 @@
         function showScene(number) {
             document.querySelectorAll('.scene').forEach(el => el.classList.remove('active'));
             document.getElementById('scene' + number).classList.add('active');
-            updateCat(number); 
+            updateCats(number); // Вызов функции генерации новых котиков
         }
 
         function finishSurvey() {
